@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PopuLens — Population &amp; Gender Analytics</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════ -->
+<header>
+  <div class="logo">Popu<span>Lens</span></div>
+
+  <div class="header-meta">
+    <div><span class="live-dot"></span>LIVE DASHBOARD</div>
+    <div id="clockDisplay">—</div>
+    <div>POPULATION &amp; GENDER ANALYTICS</div>
+  </div>
+
+  <!-- Mobile hamburger button -->
+  <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<!-- Mobile drawer nav (hidden on desktop) -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-inner">
+    <p class="drawer-title">Quick Filters</p>
+    <div class="ctrl-group">
+      <label>Region</label>
+      <select id="regionFilterMobile">
+        <option value="all">All Regions</option>
+        <option value="Asia">Asia</option>
+        <option value="Europe">Europe</option>
+        <option value="Africa">Africa</option>
+        <option value="Americas">Americas</option>
+        <option value="Oceania">Oceania</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Sort By</label>
+      <select id="sortFieldMobile">
+        <option value="pop">Population</option>
+        <option value="male">Male %</option>
+        <option value="female">Female %</option>
+        <option value="density">Density</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="applyMobileFilters()">APPLY</button>
+    <button class="btn btn-ghost" onclick="resetFilters(); closeDrawer()">RESET</button>
+  </div>
+</div>
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════════ -->
+<main>
+
+  <!-- Controls Bar -->
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Region</label>
+      <select id="regionFilter">
+        <option value="all">All Regions</option>
+        <option value="Asia">Asia</option>
+        <option value="Europe">Europe</option>
+        <option value="Africa">Africa</option>
+        <option value="Americas">Americas</option>
+        <option value="Oceania">Oceania</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Year</label>
+      <select id="yearRange">
+        <option value="2024">2024</option>
+        <option value="2020">2020</option>
+        <option value="2015">2015</option>
+        <option value="2010">2010</option>
+        <option value="2000">2000</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Sort By</label>
+      <select id="sortField">
+        <option value="pop">Population</option>
+        <option value="male">Male %</option>
+        <option value="female">Female %</option>
+        <option value="density">Density</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Search Country</label>
+      <input type="text" id="searchInput" placeholder="e.g. India…"/>
+    </div>
+    <button class="btn btn-primary" onclick="refreshDynamic()">&#8635; REFRESH</button>
+    <button class="btn btn-ghost"    onclick="resetFilters()">RESET</button>
+  </div>
+
+  <!-- KPI Section -->
+  <p class="section-label">KEY METRICS</p>
+  <h2 class="section-title">Global Population Snapshot</h2>
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- Row 1: Line + Donut -->
+  <div class="chart-grid three">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Population Growth Trend</div>
+          <div class="chart-card-sub">Top 6 countries · Millions · 2000–2024</div>
+        </div>
+        <span class="chart-badge">LINE</span>
+      </div>
+      <canvas id="lineChart" class="canvas-tall"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Global Gender Split</div>
+          <div class="chart-card-sub">Male vs. Female share</div>
+        </div>
+        <span class="chart-badge">DONUT</span>
+      </div>
+      <div class="donut-wrap">
+        <canvas id="donutChart"></canvas>
+        <div class="donut-legend" id="donutLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Bar + Polar -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Top 10 Most Populous Countries</div>
+          <div class="chart-card-sub">Grouped by male / female · 2024</div>
+        </div>
+        <span class="chart-badge">BAR</span>
+      </div>
+      <canvas id="barChart" class="canvas-tall"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Population by Region</div>
+          <div class="chart-card-sub">Share of world population · 2024</div>
+        </div>
+        <span class="chart-badge">POLAR</span>
+      </div>
+      <canvas id="polarChart" class="canvas-tall"></canvas>
+    </div>
+  </div>
+
+  <!-- Row 3: Pyramid + Gender Gap -->
+  <div class="chart-grid three" style="margin-bottom:32px">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Age-Group Population Pyramid</div>
+          <div class="chart-card-sub">Male ← | → Female · Millions · Global 2024</div>
+        </div>
+        <span class="chart-badge">PYRAMID</span>
+      </div>
+      <canvas id="pyramidChart" class="canvas-tall"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Gender Gap by Country</div>
+          <div class="chart-card-sub">% deviation from 50/50 split</div>
+        </div>
+        <span class="chart-badge">SPLIT</span>
+      </div>
+      <div id="genderGapViz" style="padding-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- Divider + Table -->
+  <div class="divider"></div>
+  <p class="section-label">DATA TABLE</p>
+  <h2 class="section-title">Country-Level Detail</h2>
+
+  <div class="filter-tags" id="regionTags">
+    <span class="ftag active" data-region="all">All</span>
+    <span class="ftag" data-region="Asia">Asia</span>
+    <span class="ftag" data-region="Europe">Europe</span>
+    <span class="ftag" data-region="Africa">Africa</span>
+    <span class="ftag" data-region="Americas">Americas</span>
+    <span class="ftag" data-region="Oceania">Oceania</span>
+  </div>
+
+  <div class="chart-card" style="padding:0">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Country</th>
+            <th>Region</th>
+            <th>Population (M)</th>
+            <th>Male %</th>
+            <th>Female %</th>
+            <th>Density /km²</th>
+            <th>Growth</th>
+            <th>Bar</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════ -->
+<footer>
+  <span class="footer-brand">PopuLens</span>
+  <span>Interactive Population &amp; Gender Analytics · B.Tech Data Science · 2025–2026</span>
+  <span>SOURCE: UN WORLD POPULATION PROSPECTS 2024</span>
+</footer>
+
+<!-- Scroll-to-top button -->
+<button class="scroll-top" id="scrollTopBtn" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8679;</button>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
